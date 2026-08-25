@@ -119,8 +119,9 @@ def run_question_ablation(
         {"role": "user", "content": prompt},
     ]
 
-    # 4. Feedback / 턴 수 제어 (no_feedback 시 1턴으로 제한)
-    effective_turns = 1 if ablation_type == "no_feedback" else max_turns
+    # 4. Feedback / 턴 수 제어
+    effective_turns = max_turns
+    # effective_turns = 1 if ablation_type == "no_feedback" else max_turns  # (w/o Interactive Coding은 ablation_wo_interactive_coding.py로 완전 분리됨)
 
     last_result = None
     last_code = None
@@ -245,21 +246,20 @@ def run_ablation_experiment(
             f.write(joined)
 
         # 판정 로직
-        if ablation_type == "no_feedback":
-            # no_feedback은 1회 실행 결과를 바로 판정
-            pred_text = str(out.get("answer") or "")
-            result = judge(pred_text, answer_str)
+        # if ablation_type == "no_feedback":
+        #     pred_text = str(out.get("answer") or "")
+        #     result = judge(pred_text, answer_str)
+        # else:
+        if not out.get("terminated"):
+            result = False
+        elif '"cell": "' in joined:
+            last_code_end = joined.rfind('"\n}')
+            prediction = joined[last_code_end : joined.rfind("TERMINATE")]
+            result = judge(prediction, answer_str)
         else:
-            if not out.get("terminated"):
-                result = False
-            elif '"cell": "' in joined:
-                last_code_end = joined.rfind('"\n}')
-                prediction = joined[last_code_end : joined.rfind("TERMINATE")]
-                result = judge(prediction, answer_str)
-            else:
-                last_code_end = joined.rfind("Solution:")
-                prediction = joined[last_code_end : joined.rfind("TERMINATE")]
-                result = judge(prediction, answer_str)
+            last_code_end = joined.rfind("Solution:")
+            prediction = joined[last_code_end : joined.rfind("TERMINATE")]
+            result = judge(prediction, answer_str)
 
         n_correct += int(bool(result))
         print(
@@ -316,7 +316,8 @@ def main():
         "--ablation",
         type=str,
         default="all",
-        choices=["no_knowledge", "no_memory", "no_debugger", "no_feedback", "all"],
+        choices=["no_knowledge", "no_memory", "no_debugger", "all"],
+        # choices=["no_knowledge", "no_memory", "no_debugger", "no_feedback", "all"],  # no_feedback (1턴 실행) 비활성화
         help="Ablation type to run",
     )
     parser.add_argument(
@@ -342,8 +343,10 @@ def main():
     )
     args = parser.parse_args()
 
+    # 3대 핵심 컴포넌트 어블레이션 (w/o Interactive Coding 관련 no_feedback은 주석 처리)
     experiments = (
-        ["no_knowledge", "no_memory", "no_debugger", "no_feedback"]
+        ["no_knowledge", "no_memory", "no_debugger"]
+        # ["no_knowledge", "no_memory", "no_debugger", "no_feedback"]
         if args.ablation == "all"
         else [args.ablation]
     )
