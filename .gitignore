@@ -1,0 +1,20 @@
+# 보안 및 가상환경
+.env
+.venv
+
+# 파이썬 캐시
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 대용량 데이터 및 아카이브 (100MB 초과 방지)
+/data
+/archive
+/logs
+/official_router
+
+# 맥 OS 시스템 파일
+.DS_Store
+
+# 문서
+agent.md
