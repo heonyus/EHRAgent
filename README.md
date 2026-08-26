@@ -1,7 +1,3 @@
-# EHRAgent Reproduction
-
-Reproduction and ablation codebase for EHRAgent on MIMIC-III (EHRSQL benchmark).
-
 ## Quick Start
 
 ```bash
